@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LAB1</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/dist/css/bootstrap.css}">
+
+</head>
+<body>
+
+<div class="container-fluid">
+    <label></label>
+    <div class="row">
+        <div class="col">
+            <canvas id="canvas" width="1000" height="800" style="border:1px solid #000000"></canvas>
+        </div>
+
+        <div class="col">
+            <h1 class="display-4">Лабораторна робота 2+3</h1>
+
+            <blockquote class="blockquote">
+                <p>Для переміщення по екрану використовуйте клавіші W, A, S, D </p>
+                <p>Для збільшення/зменшення малюнка використовуйте клавіші Q, E </p>
+                <p>Для повороту малюнка використовуйте клавіші R, T </p>
+            </blockquote>
+
+            <blockquote class="blockquote">
+                <p>Точка, відносно якої буде відбуватися поворот:</p>
+            </blockquote>
+
+            <div class="input-group">
+                <input type="text" aria-label="centerX" id="centerX" class="form-control">
+                <input type="text" aria-label="centerY"  id="centerY" class="form-control">
+            </div>
+            <label></label>
+            <div class="d-grid gap-2">
+                <button type="button" id="setCenterButton" class="btn btn-outline-secondary">Set center</button>
+            </div>
+
+            <label></label>
+
+            <blockquote class="blockquote">
+                <p>Оберіть колір:</p>
+            </blockquote>
+
+            <select class="form-select" id="colorSelect" aria-label="Default select example">
+                <option value='red'>Red</option>
+                <option value='green'>Green</option>
+                <option value='blue'>Blue</option>
+                <option value='yellow'>Yellow</option>
+                <option value='purple'>Purple</option>
+            </select>
+            <label></label>
+            <div class="d-grid gap-2">
+                <button type="button" id="changeColorButton" class="btn btn-outline-secondary">Change Color</button>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    let context = canvas.getContext('2d');
+    let selectedColor = 'red';
+    let X = 0;
+    let Y = 0;
+    function drawLine(x0, y0, x1, y1) {
+        context.beginPath();
+        context.moveTo(x0, y0);
+        let dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+        let dy = Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+        let err = (dx > dy ? dx : -dy) / 2;
+        while (true) {
+            context.fillRect(x0, y0, 1, 1);
+            if (x0 === x1 && y0 === y1) break;
+            let e2 = err;
+            if (e2 > -dx) { err -= dy; x0 += sx; }
+            if (e2 < dy) { err += dx; y0 += sy; }
+        }
+        context.stroke();
+    }
+
+    function fillShape(lines, color) {
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        for (const line of lines) {
+            if (line.y0 < minY) minY = line.y0;
+            if (line.y0 > maxY) maxY = line.y0;
+            if (line.y1 < minY) minY = line.y1;
+            if (line.y1 > maxY) maxY = line.y1;
+        }
+        context.fillStyle = color;
+        for (let x = 0; x < canvas.width; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                if (isPointInsideShape(x, y, lines)) {
+                    context.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+    }
+
+    function isPointInsideShape(x, y, lines) {
+        let inside = false;
+        for (const line of lines) {
+            if ((line.y0 > y) !== (line.y1 > y) &&
+                x < ((line.x1 - line.x0) * (y - line.y0)) / (line.y1 - line.y0) + line.x0) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    let elements = [
+        //  Г
+        [
+            { x0: 50.0, y0: 50.0, x1: 50.0, y1: 200.0 },
+            { x0: 50.0, y0: 50.0, x1: 150.0, y1: 50.0 },
+            { x0: 150.0, y0: 50.0, x1: 150.0, y1: 80.0 },
+            { x0: 150.0, y0: 80.0, x1: 80.0, y1: 80.0 },
+            { x0: 80.0, y0: 80.0, x1: 80.0, y1: 200.0 },
+            { x0: 80.0, y0: 200.0, x1: 50.0, y1: 200.0 }
+        ],
+        //  Є
+        [
+            { x0: 215.0, y0: 50.0, x1: 300.0, y1: 50.0 },
+            { x0: 300.0, y0: 50.0, x1: 300.0, y1: 80.0 },
+            { x0: 300.0, y0: 80.0, x1: 230.0, y1: 80.0 },
+            { x0: 215.0, y0: 50.0, x1: 190.0, y1: 80.0 },
+            { x0: 190.0, y0: 80.0, x1: 190.0, y1: 170.0 },
+            { x0: 190.0, y0: 170.0, x1: 215.0, y1: 200.0 },
+            { x0: 215.0, y0: 200.0, x1: 300.0, y1: 200.0 },
+            { x0: 300.0, y0: 200.0, x1: 300.0, y1: 170.0 },
+            { x0: 300.0, y0: 170.0, x1: 230.0, y1: 170.0 },
+            { x0: 230.0, y0: 170.0, x1: 230.0, y1: 140.0 },
+            { x0: 230.0, y0: 140.0, x1: 300.0, y1: 140.0 },
+            { x0: 300.0, y0: 140.0, x1: 300.0, y1: 110.0 },
+            { x0: 300.0, y0: 110.0, x1: 230.0, y1: 110.0 },
+            { x0: 230.0, y0: 110.0, x1: 230.0, y1: 80.0 }
+        ],
+        // О
+        [
+            { x0: 375.0, y0: 50.0, x1: 450.0, y1: 50.0 },
+            { x0: 375.0, y0: 50.0, x1: 350.0, y1: 80.0 },
+            { x0: 450.0, y0: 50.0, x1: 475.0, y1: 80.0 },
+            { x0: 350.0, y0: 80.0, x1: 350.0, y1: 170.0 },
+            { x0: 475.0, y0: 80.0, x1: 475.0, y1: 170.0 },
+            { x0: 350.0, y0: 170.0, x1: 375.0, y1: 200.0 },
+            { x0: 475.0, y0: 170.0, x1: 450.0, y1: 200.0 },
+            { x0: 450.0, y0: 200.0, x1: 375.0, y1: 200.0 },
+            { x0: 375.0, y0: 80.0, x1: 450.0, y1: 80.0 },
+            { x0: 375.0, y0: 80.0, x1: 375.0, y1: 170.0 },
+            { x0: 450.0, y0: 80.0, x1: 450.0, y1: 170.0 },
+            { x0: 375.0, y0: 170.0, x1: 450.0, y1: 170.0 }
+        ],
+        // 2
+        [
+            { x0: 65.0, y0: 250.0, x1: 130.0, y1: 250.0 },
+            { x0: 65.0, y0: 250.0, x1: 50.0, y1: 265.0 },
+            { x0: 130.0, y0: 250.0, x1: 145.0, y1: 265.0 },
+            { x0: 50.0, y0: 265.0, x1: 50.0, y1: 295.0 },
+            { x0: 145.0, y0: 265.0, x1: 145.0, y1: 295.0 },
+            { x0: 50.0, y0: 295.0, x1: 80.0, y1: 295.0 },
+            { x0: 80.0, y0: 295.0, x1: 80.0, y1: 280.0 },
+            { x0: 80.0, y0: 280.0, x1: 115.0, y1: 280.0 },
+            { x0: 115.0, y0: 280.0, x1: 50.0, y1: 360.0 },
+            { x0: 145.0, y0: 295.0, x1: 95.0, y1: 360.0 },
+            { x0: 95.0, y0: 360.0, x1: 145.0, y1: 360.0 },
+            { x0: 145.0, y0: 360.0, x1: 145.0, y1: 390.0 },
+            { x0: 145.0, y0: 390.0, x1: 50.0, y1: 390.0 },
+            { x0: 50.0, y0: 390.0, x1: 50.0, y1: 360.0 }
+        ],
+        // 9
+        [
+            { x0: 200.0, y0: 250.0, x1: 265.0, y1: 250.0 },
+            { x0: 200.0, y0: 250.0, x1: 185.0, y1: 265.0 },
+            { x0: 265.0, y0: 250.0, x1: 280.0, y1: 265.0 },
+            { x0: 185.0, y0: 265.0, x1: 185.0, y1: 300.0 },
+            { x0: 280.0, y0: 265.0, x1: 280.0, y1: 300.0 },
+            { x0: 185.0, y0: 300.0, x1: 200.0, y1: 315.0 },
+            { x0: 280.0, y0: 300.0, x1: 280.0, y1: 375.0 },
+            { x0: 280.0, y0: 375.0, x1: 265.0, y1: 390.0 },
+            { x0: 265.0, y0: 390.0, x1: 200.0, y1: 390.0 },
+            { x0: 200.0, y0: 390.0, x1: 185.0, y1: 375.0 },
+            { x0: 185.0, y0: 375.0, x1: 185.0, y1: 360.0 },
+            { x0: 185.0, y0: 360.0, x1: 200.0, y1: 360.0 },
+            { x0: 200.0, y0: 360.0, x1: 215.0, y1: 375.0 },
+            { x0: 215.0, y0: 375.0, x1: 250.0, y1: 375.0 },
+            { x0: 250.0, y0: 375.0, x1: 265.0, y1: 360.0 },
+            { x0: 265.0, y0: 360.0, x1: 265.0, y1: 315.0 },
+            { x0: 265.0, y0: 315.0, x1: 200.0, y1: 315.0 },
+            { x0: 200.0, y0: 265.0, x1: 265.0, y1: 265.0 },
+            { x0: 265.0, y0: 265.0, x1: 265.0, y1: 300.0 },
+            { x0: 200.0, y0: 265.0, x1: 200.0, y1: 300.0 },
+            { x0: 200.0, y0: 300.0, x1: 265.0, y1: 300.0 }
+        ],
+        // 0
+        [
+            { x0: 65.0, y0: 440.0, x1: 130.0, y1: 440.0 },
+            { x0: 65.0, y0: 440.0, x1: 50.0, y1: 455.0 },
+            { x0: 130.0, y0: 440.0, x1: 145.0, y1: 455.0 },
+            { x0: 145.0, y0: 455.0, x1: 145.0, y1: 565.0 },
+            { x0: 50.0, y0: 455.0, x1: 50.0, y1: 565.0 },
+            { x0: 50.0, y0: 565.0, x1: 65.0, y1: 580.0 },
+            { x0: 145.0, y0: 565.0, x1: 130.0, y1: 580.0 },
+            { x0: 65.0, y0: 580.0, x1: 130.0, y1: 580.0 },
+            { x0: 65.0, y0: 455.0, x1: 130.0, y1: 455.0 },
+            { x0: 65.0, y0: 565.0, x1: 130.0, y1: 565.0 },
+            { x0: 65.0, y0: 455.0, x1: 65.0, y1: 565.0 },
+            { x0: 130.0, y0: 455.0, x1: 130.0, y1: 565.0 }
+        ],
+        // 4
+        [
+            { x0: 185.0, y0: 440.0, x1: 215.0, y1: 440.0 },
+            { x0: 245.0, y0: 440.0, x1: 275.0, y1: 440.0 },
+            { x0: 215.0, y0: 440.0, x1: 215.0, y1: 485.0 },
+            { x0: 245.0, y0: 440.0, x1: 245.0, y1: 485.0 },
+            { x0: 215.0, y0: 485.0, x1: 245.0, y1: 485.0 },
+            { x0: 185.0, y0: 515.0, x1: 245.0, y1: 515.0 },
+            { x0: 245.0, y0: 515.0, x1: 245.0, y1: 580.0 },
+            { x0: 245.0, y0: 580.0, x1: 275.0, y1: 580.0 },
+            { x0: 185.0, y0: 440.0, x1: 185.0, y1: 515.0 },
+            { x0: 275.0, y0: 440.0, x1: 275.0, y1: 580.0 }
+        ],
+        // 2
+        [
+            { x0: 65.0, y0: 630.0, x1: 130.0, y1: 630.0 },
+            { x0: 65.0, y0: 630.0, x1: 50.0, y1: 645.0 },
+            { x0: 130.0, y0: 630.0, x1: 145.0, y1: 645.0 },
+            { x0: 50.0, y0: 645.0, x1: 50.0, y1: 675.0 },
+            { x0: 50.0, y0: 675.0, x1: 80.0, y1: 675.0 },
+            { x0: 80.0, y0: 675.0, x1: 80.0, y1: 660.0 },
+            { x0: 80.0, y0: 660.0, x1: 115.0, y1: 660.0 },
+            { x0: 115.0, y0: 660.0, x1: 50.0, y1: 740.0 },
+            { x0: 50.0, y0: 740.0, x1: 50.0, y1: 770.0 },
+            { x0: 50.0, y0: 770.0, x1: 145.0, y1: 770.0 },
+            { x0: 145.0, y0: 770.0, x1: 145.0, y1: 740.0 },
+            { x0: 145.0, y0: 740.0, x1: 95.0, y1: 740.0 },
+            { x0: 145.0, y0: 645.0, x1: 145.0, y1: 675.0 },
+            { x0: 145.0, y0: 675.0, x1: 95.0, y1: 740.0 }
+        ],
+        // 0
+        [
+            { x0: 200.0, y0: 630.0, x1: 265.0, y1: 630.0 },
+            { x0: 200.0, y0: 630.0, x1: 185.0, y1: 645.0 },
+            { x0: 265.0, y0: 630.0, x1: 280.0, y1: 645.0 },
+            { x0: 185.0, y0: 645.0, x1: 185.0, y1: 755.0 },
+            { x0: 280.0, y0: 645.0, x1: 280.0, y1: 755.0 },
+            { x0: 200.0, y0: 770.0, x1: 265.0, y1: 770.0 },
+            { x0: 185.0, y0: 755.0, x1: 200.0, y1: 770.0 },
+            { x0: 280.0, y0: 755.0, x1: 265.0, y1: 770.0 },
+            { x0: 200.0, y0: 645.0, x1: 265.0, y1: 645.0 },
+            { x0: 200.0, y0: 755.0, x1: 265.0, y1: 755.0 },
+            { x0: 200.0, y0: 645.0, x1: 200.0, y1: 755.0 },
+            { x0: 265.0, y0: 645.0, x1: 265.0, y1: 755.0 }
+        ],
+        // 0
+        [
+            { x0: 335.0, y0: 630.0, x1: 400.0, y1: 630.0 },
+            { x0: 335.0, y0: 630.0, x1: 320.0, y1: 645.0 },
+            { x0: 400.0, y0: 630.0, x1: 415.0, y1: 645.0 },
+            { x0: 320.0, y0: 645.0, x1: 320.0, y1: 755.0 },
+            { x0: 415.0, y0: 645.0, x1: 415.0, y1: 755.0 },
+            { x0: 335.0, y0: 770.0, x1: 400.0, y1: 770.0 },
+            { x0: 320.0, y0: 755.0, x1: 335.0, y1: 770.0 },
+            { x0: 415.0, y0: 755.0, x1: 400.0, y1: 770.0 },
+            { x0: 335.0, y0: 645.0, x1: 400.0, y1: 645.0 },
+            { x0: 335.0, y0: 755.0, x1: 400.0, y1: 755.0 },
+            { x0: 335.0, y0: 645.0, x1: 335.0, y1: 755.0 },
+            { x0: 400.0, y0: 645.0, x1: 400.0, y1: 755.0 }
+        ],
+        // 4
+        [
+            { x0: 455.0, y0: 630.0, x1: 485.0, y1: 630.0 },
+            { x0: 515.0, y0: 630.0, x1: 545.0, y1: 630.0 },
+            { x0: 455.0, y0: 630.0, x1: 455.0, y1: 705.0 },
+            { x0: 485.0, y0: 630.0, x1: 485.0, y1: 675.0 },
+            { x0: 485.0, y0: 675.0, x1: 515.0, y1: 675.0 },
+            { x0: 515.0, y0: 630.0, x1: 515.0, y1: 675.0 },
+            { x0: 545.0, y0: 630.0, x1: 545.0, y1: 770.0 },
+            { x0: 455.0, y0: 705.0, x1: 515.0, y1: 705.0 },
+            { x0: 515.0, y0: 705.0, x1: 515.0, y1: 770.0 },
+            { x0: 515.0, y0: 770.0, x1: 545.0, y1: 770.0 }
+        ]
+    ];
+    elements.forEach(lines => lines.forEach(line => drawLine(line.x0, line.y0, line.x1, line.y1)));
+    elements.forEach(lines => fillShape(lines, selectedColor));
+
+    function handleKeyPress(e) {
+        if (e.key === "w") {
+            elements.forEach(lines => lines.forEach(line => { line.y0 -= 10; line.y1 -= 10; }));
+        } else if (e.key === "a") {
+            elements.forEach(lines => lines.forEach(line => { line.x0 -= 10; line.x1 -= 10; }));
+        } else if (e.key === "s") {
+            elements.forEach(lines => lines.forEach(line => { line.y0 += 10; line.y1 += 10; }));
+        } else if (e.key === "d") {
+            elements.forEach(lines => lines.forEach(line => { line.x0 += 10; line.x1 += 10; }));
+        }else if (e.key === "r"){
+            elements.forEach((lines, index) => {
+                elements[index] = rotateShape(lines, X, Y, 5);
+            });
+        } else if (e.key === "t") {
+            elements.forEach((lines, index) => {
+                elements[index] = rotateShape(lines, X, Y, -5);
+            });
+        }
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        elements.forEach(lines => lines.forEach(line => drawLine(line.x0, line.y0, line.x1, line.y1)));
+        elements.forEach(lines => fillShape(lines, selectedColor));
+    }
+
+    function rotatePoint(x, y, centerX, centerY, angle) {
+        let cosTheta = Math.cos(angle * Math.PI / 180);
+        let sinTheta = Math.sin(angle * Math.PI / 180);
+
+        let relativeX = x - centerX;
+        let relativeY = y - centerY;
+
+        let newX = Math.round(relativeX * cosTheta - relativeY * sinTheta + centerX);
+        let newY = Math.round(relativeX * sinTheta + relativeY * cosTheta + centerY);
+
+        return { x: Math.round(newX), y: Math.round(newY) };
+    }
+
+    function rotateShape(lines, X, Y, angle) {
+        return lines.map(line => {
+            const rotatedPoint0 = rotatePoint(line.x0, line.y0, X, Y, angle);
+            const rotatedPoint1 = rotatePoint(line.x1, line.y1, X, Y, angle);
+            return {
+                x0: rotatedPoint0.x,
+                y0: rotatedPoint0.y,
+                x1: rotatedPoint1.x,
+                y1: rotatedPoint1.y
+            };
+        });
+    }
+
+    function roundCoordinates(number) {
+        if (Math.round(number) >= 2){
+            return Math.round(number);
+        } else return 2;
+
+    }
+    function changeSize(e){
+        switch (e.key) {
+            case "q":
+                // Decrease size when "Q" is pressed
+                elements.forEach(lines => lines.forEach(line => {
+                    line.x0 /= 2;
+                    line.y0 /= 2;
+                    line.x1 /= 2;
+                    line.y1 /= 2;
+
+                    line.x0 = roundCoordinates(line.x0);
+                    line.y0 = roundCoordinates(line.y0);
+                    line.x1 = roundCoordinates(line.x1);
+                    line.y1 = roundCoordinates(line.y1);
+                }));
+                break;
+            case "e":
+                // Increase size when "E" is pressed
+                elements.forEach(lines => lines.forEach(line => {
+                    line.x0 *= 2;
+                    line.y0 *= 2;
+                    line.x1 *= 2;
+                    line.y1 *= 2;
+                }));
+                break;
+        }
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        elements.forEach(lines => lines.forEach(line => drawLine(line.x0, line.y0, line.x1, line.y1)));
+        elements.forEach(lines => fillShape(lines, selectedColor));
+    }
+
+    function changeColor() {
+        selectedColor = document.getElementById("colorSelect").value;
+        elements.forEach(lines => fillShape(lines, selectedColor));
+    }
+
+    function setCenter(){
+        X = document.getElementById("centerX").value;
+        Y = document.getElementById("centerY").value;
+    }
+
+    document.getElementById("changeColorButton").addEventListener("click", changeColor)
+    document.getElementById("setCenterButton").addEventListener("click", setCenter)
+    document.addEventListener("keydown", handleKeyPress);
+    document.addEventListener("keydown", changeSize);
+
+</script>
+
+<script th:src="@{webjars/jquery/3.7.0/dist/jquery.js}"></script>
+<script th:src="@{webjars/popperjs__core/2.11.8/dist/umd/popper.js}"></script>
+<script th:src="@{webjars/bootstrap/5.3.0/dist/js/bootstrap.bundle.js}"></script>
+</body>
+</html>
